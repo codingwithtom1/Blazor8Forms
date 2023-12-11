@@ -1,0 +1,262 @@
+﻿@page "/formstest"
+
+@using System.ComponentModel.DataAnnotations;
+@using System.Text.RegularExpressions
+
+<h3>Pizza Order</h3>
+<EditForm Enhance EditContext="editContext" OnValidSubmit="@SubmitForm1" FormName="Form1">
+    <DataAnnotationsValidator />
+    <ValidationSummary/>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 p-1">
+                <label>First Name</label>
+            </div>
+             <div class="col-md-4 p-1">
+                  <InputText @bind-Value="formModel!.FirstName" />
+                  <ValidationMessage For="@(() => formModel!.FirstName)" />
+             </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 p-1">
+                <label>Last Name</label>
+            </div>
+             <div class="col-md-4 p-1">
+                  <InputText @bind-Value="formModel!.LastName" />
+                <ValidationMessage For="@(() => formModel!.LastName)" />
+             </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 p-1">
+                <label>Email</label>
+            </div>
+             <div class="col-md-4 p-1">
+                  <InputText @bind-Value="formModel!.Email" />
+                <ValidationMessage For="@(() => formModel!.Email)" />
+             </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 p-1">
+                <label>Size</label>
+            </div>
+             <div class="col-md-4 p-1">
+                <InputSelect @bind-Value="formModel!.Size">
+                @if (formModel!.Size is null) {
+                    <option selected value=""></option>
+                }
+                else {
+                    <option value=""></option>
+                }
+                @foreach (Option o in pizzasizes)
+                {
+                    @if (formModel.Size == o.Value) {
+                        <option selected value="@o.Value">@o.Display</option>
+                    }
+                    else
+                    {
+                        <option value="@o.Value">@o.Display</option>
+                    }
+                }
+                </InputSelect>
+                <ValidationMessage For="@(() => formModel!.Size)" />
+             </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 p-1">
+            Toppings
+            </div>
+             <div class="col-md-4 p-1">
+                <div>
+                    <InputCheckbox @bind-Value="formModel!.ExtraCheese" />
+                    <span class="p-1">Extra Cheese</span>
+                </div>
+                <div>
+                    <InputCheckbox @bind-Value="formModel!.Peppers" />
+                    <span class="p-1">Peppers</span>
+                </div>
+                <div>
+                  <InputCheckbox @bind-Value="formModel!.Sausage" />
+                    <span class="p-1">Sausage</span>
+                </div>
+                <ValidationMessage For="@(() => formModel!.ExtraCheese)" />
+                <ValidationMessage For="@(() => formModel!.Peppers)" />
+                <ValidationMessage For="@(() => formModel!.Sausage)" />
+             </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 p-1">
+                <label>How Cooked</label>
+            </div>
+            <div class="col-md-4 p-1">
+                <InputRadioGroup @bind-Value="formModel!.Cooked">
+                    @foreach (Option o in cookedoptions)
+                    {
+                        <div ><InputRadio Value="@o.Value" /><span class="p-1">@o.Display</span></div>
+
+                     
+                    }
+                    </InputRadioGroup>
+                <ValidationMessage For="@(() => formModel!.Cooked)" />
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 p-1">
+                <label>Delivery Date</label>
+            </div>
+            <div class="col-md-4 p-1">
+                <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="formModel!.DeliveryTime" />
+                <ValidationMessage For="@(() => formModel!.DeliveryTime)" />
+            </div>
+        </div>
+    </div>
+
+
+   <div>
+       <!--<table>
+       @for (int i =0; i < 100; i++)
+        {
+            <tr>
+            @for (int j = 0; j < 30; j++)
+            {
+                <td>@(i*j)</td>
+            }
+            </tr>
+        }
+        </table>-->
+
+   </div>
+    <div>
+        <button type="submit">Update</button>
+    </div>
+</EditForm>
+@code {
+    private EditContext? editContext;
+    private ValidationMessageStore? messageStore;
+
+    [SupplyParameterFromForm]
+    public PizzaOrder? formModel { get; set; }
+
+    public class Option
+    {
+        public string? Value { get; set; }
+        public string? Display { get; set; }
+    }
+    public Option[] pizzasizes = new Option[] { 
+        new Option { Value = "small", Display = "Small" },
+        new Option { Value = "medium", Display = "Medium" }, 
+        new Option { Value = "large", Display = "Large" }
+    };
+    public Option[] cookedoptions = new Option[]
+    {
+        new Option {Value="light", Display="Lightly Cooked"},
+        new Option {Value="normal", Display="Normal"},
+        new Option {Value="welldone", Display="Well Done"},
+    };
+
+    private async Task SubmitForm1()
+    {
+        // All validations passed,
+        // formModel will have valid data.
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        formModel ??= new();
+        editContext = new(formModel);
+        editContext.OnValidationRequested += form1HandleValidationRequested;
+        messageStore = new(editContext);
+    }
+
+    private void form1HandleValidationRequested(object? sender,
+        ValidationRequestedEventArgs args)
+    {
+        // this is only called on submit form.
+        messageStore?.Clear();
+
+        // Custom validation logic
+        if (formModel!.Sausage && formModel!.Peppers)
+        {
+            messageStore?.Add(() => formModel.Peppers, "Peppers not available with sausage.");
+        }
+        if (formModel!.Email !=null && formModel!.Email.Contains("@microsoft.com"))
+        {
+            messageStore?.Add(() => formModel.Email, "Not available to people at microsoft.com");
+        }
+    }
+
+
+
+    public class PizzaOrder
+    {
+        public string? Cooked { get; set; } = "normal";
+
+        public bool ExtraCheese { get; set; }
+        public bool Peppers { get; set; }
+        public bool Sausage { get; set; }
+        
+        [Required]
+        public string? Size { get; set; } = null;
+        
+        [Required]
+        [StringLength(50, ErrorMessage = "First Name too long (50 character limit).")]
+        public string? FirstName { get; set; }
+        
+        [Required]
+        [StringLength(100, ErrorMessage = "Last Name too long (100 character limit).")]
+        public string? LastName { get; set; }
+        
+        [Required]
+        [Email]
+        public string? Email { get; set; }
+
+        [Required]
+        public DateTime DeliveryTime { get; set; } = DateTime.Now;
+
+    }
+
+
+    public class EmailAttribute : ValidationAttribute
+    {
+        protected override ValidationResult? IsValid(object? value,
+            ValidationContext validationContext)
+        {
+
+            if (value is not null)
+            {
+                var pattern = @"(@)(.+)$";
+                if (Regex.IsMatch(value.ToString(), pattern))
+                {
+                    if (value!.ToString().Contains("test.com"))
+                    {
+                        return new ValidationResult("Not available to test.com users.", new[] { validationContext.MemberName }!);
+                        
+                    }
+                    else
+                    {
+                        return ValidationResult.Success;
+                    }
+                }
+                else
+                {
+                    return new ValidationResult("Invalid Email Format.", new[] { validationContext.MemberName }!);
+                }
+            }   
+            else
+            {
+                return new ValidationResult("Email is required.", new[] { validationContext.MemberName }!);
+            }
+        }
+    }
+}
